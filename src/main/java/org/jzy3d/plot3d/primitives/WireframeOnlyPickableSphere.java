@@ -5,6 +5,10 @@ import org.jzy3d.maths.Coord3d;
 import org.jzy3d.painters.IPainter;
 import org.jzy3d.plot3d.primitives.pickable.PickableSphere;
 
+/**
+ * A sphere that is only drawn as a wireframe.
+ * This avoids transparency problems.
+ */
 public class WireframeOnlyPickableSphere extends PickableSphere {
 
     public WireframeOnlyPickableSphere(Coord3d position, float radius, int slicing, Color color) {
