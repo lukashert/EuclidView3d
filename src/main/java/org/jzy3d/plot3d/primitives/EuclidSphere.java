@@ -45,7 +45,8 @@ public class EuclidSphere extends Composite implements Pickable, PickableObjects
     @Override
     public void setNewPosition(Coord3d position){
         sphere.setPosition(position);
-        label.setPosition(new Coord3d(position.x,position.y,position.z-LabelFactory.getInstance().getOffset()));
+        if (label != null)
+            label.setPosition(new Coord3d(position.x, position.y, position.z - LabelFactory.getInstance().getOffset()));
     }
 
     @Override

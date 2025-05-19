@@ -53,6 +53,7 @@ import org.jzy3d.plot3d.rendering.canvas.CanvasNewtAwt;
 import org.jzy3d.plot3d.rendering.canvas.Quality;
 import org.jzy3d.plot3d.rendering.lights.Light;
 import org.jzy3d.plot3d.rendering.view.Camera;
+import org.jzy3d.plot3d.transform.Transform;
 
 /**
  *
@@ -526,68 +527,30 @@ public class EuclidViewer3D extends AbstractAnalysis implements iEuclidViewer3D{
         }
         return arrow;
     }
-    
-    /**
-     * Add a plane to the 3d view.
-     * 
-     * @param location center of the plane (first point) [mm]
-     * @param dir1 vector which is added to the first point to get the second point, unit in [mm]
-     * @param dir2 vector which is added to the second point to get the third point, unit in [mm]
-     *             and which is added to the location to get the forth point
-     * @param color color of the plane
-     * @param label the text of the label of the plane
-     * @return false, if the plane is outside the bounding-box and not visualized
-     * @Deprecated
-     */
-    /*public boolean addPlaneDeprecated(Point3d location, Vector3d dir1, Vector3d dir2, 
-                          Color color, String label){
-        location = clipPoint(location);
-        Point3d p1 = new Point3d(location.x+dir1.x,location.y+dir1.y, location.z+dir1.z);
-        Point3d p2 = new Point3d(location.x+dir2.x,location.y+dir2.y, location.z+dir2.z);
-        //p1 = clipPoint(p1);
-        //p2 = clipPoint(p2);
-        dir1 = new Vector3d(p1.x-location.x, p1.y-location.y, p1.z-location.z);
-        dir2 = new Vector3d(p2.x-location.x, p2.y-location.y, p2.z-location.z);
-        EuclidPlane plane = new EuclidPlane();
-        plane.setData(location, dir1, dir2, color, label);
-        plane.setPolygonOffsetFillEnable(false);
-        plane.setWireframeDisplayed(true);
-        if (pickingSupport != null){
-            plane.setPickingId(pickingId++);
-            pickingSupport.registerDrawableObject(plane, plane);
-        }
-        chart.add(plane);
-        if (pickingSupport != null){    
-            pickingSupportList.add(plane);
-        }
-        // wenn ausserhalb der bounding-box false
-        //TODO
-        return true;
-    }*/
-    
-    
+
     @Override
-    public long addPolygone(Point3d location, Point3d[] corners, Color color, 
-            String label, boolean showNormal, boolean transparency) {
-        
-        org.jzy3d.colors.Color col = new org.jzy3d.colors.Color(color.getRed(),color.getGreen(),color.getBlue(), color.getAlpha());
-        Composite composite = addPolygone(location, corners, 
-                          col, label);
+    public long addPolygone(Point3d location, Point3d[] corners, Color color,
+                            String label, boolean showNormal, boolean transparency, Transform transformation) {
+
+        org.jzy3d.colors.Color col = new org.jzy3d.colors.Color(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha());
+        Composite composite = addPolygone(location, corners,
+                col, label, transformation);
         viewObjects.put(compositeId, composite);
         return compositeId++;
     }
 
     /**
      * Add a plane to the 3d view.
-     * 
-     * @param location center of the plane (first point) [mm]
+     *
+     * @param location  center of the plane (first point) [mm]
      * @param corners
-     * @param color color of the plane
-     * @param label the text of the label of the plane
+     * @param color     color of the plane
+     * @param label     the text of the label of the plane
+     * @param transform Transformation matrix
      */
-    Composite addPolygone(Point3d location, Point3d[] corners, 
-                          org.jzy3d.colors.Color color, String label){
-        
+    Composite addPolygone(Point3d location, Point3d[] corners,
+                          org.jzy3d.colors.Color color, String label, Transform transform) {
+
         //TODO test corners auf illagal values
         if (!isValid(location)){
             throw new IllegalArgumentException("addPlane(): location with illegal values!");
@@ -596,8 +559,10 @@ public class EuclidViewer3D extends AbstractAnalysis implements iEuclidViewer3D{
         EuclidPlane plane = new EuclidPlane();
         plane.setData(location, corners, color, label);
         plane.setPolygonOffsetFillEnable(false);
-        plane.setWireframeDisplayed(true);
-        if (pickingSupport != null){
+        plane.setWireframeDisplayed(false);
+        plane.setTransformBefore(transform);
+
+        if (pickingSupport != null) {
             plane.setPickingId(pickingId++);
             pickingSupport.registerDrawableObject(plane, plane);
         }
@@ -621,70 +586,58 @@ public class EuclidViewer3D extends AbstractAnalysis implements iEuclidViewer3D{
     void addLabel(Point3d location, String text, org.jzy3d.colors.Color color){
          chart.add(LabelFactory.getInstance().addLabel(location, text, org.jzy3d.colors.Color.BLACK));
     }
-    
+
     /**
      * Clips a point.
      * 
      * Projection of the point to the bounding box. Needed to implement mouse functionality.
-     * 
+     *
      * @param point The point which should be clipped
      * @return the clipped point
      */
-    private Point3d clipPoint(Point3d point){
+    private Point3d clipPoint(Point3d point) {
         BoundingBox3d bounds = chart.getView().getAxis().getBounds();
-        if (point.x < bounds.getXmin()){
+        if (point.x < bounds.getXmin()) {
             point.x = bounds.getXmin();
-        } else if (point.x > bounds.getXmax()){
+        } else if (point.x > bounds.getXmax()) {
             point.x = bounds.getXmax();
         }
-        if (point.y < bounds.getYmin()){
+        if (point.y < bounds.getYmin()) {
             point.y = bounds.getYmin();
-        } else if (point.y > bounds.getYmax()){
+        } else if (point.y > bounds.getYmax()) {
             point.y = bounds.getYmax();
-        } 
-        if (point.z < bounds.getZmin()){
+        }
+        if (point.z < bounds.getZmin()) {
             point.z = bounds.getZmin();
-        } else if (point.z > bounds.getZmax()){
+        } else if (point.z > bounds.getZmax()) {
             point.z = bounds.getZmax();
         }
         return point;
     }
-    
-     /**
-     * Determine clipping point of a line with the bounding box of the current
-     * visualization.
-     * 
-     * In principle "Liang-Barsky Line Clipping algorithm" is a possible 
-     * implementation.
-     * 
-     * @param line
-     * @param p output near point, far point, [] if no intersection, maybe only one point
-     * @return true if there are intersection points
-     */
+
     /*private Point3d[] clipLine(de.orat.view3d.euclid3dviewapi.util.Line line){
         AxisAlignedBoundingBox aabb = createAxisAlignedBoundBox();
-        
+
         // bis auf L_45 scheint das zu funktionieren
         //return aabb.clip4(line);
-        
+
         // funktioniert
         return aabb.clip(line);
-        
+
         // funktioniert nicht, führt zum Absturz, out of memory
         //return aabb.clip3(line);
     }*/
-    
-    private AxisAlignedBoundingBox createAxisAlignedBoundBox(){
+    private AxisAlignedBoundingBox createAxisAlignedBoundBox() {
         BoundingBox3d bounds = chart.getView().getAxis().getBounds();
-        
+
         // representation variant 1
         Point3d center = new Point3d(bounds.getCenter().x, bounds.getCenter().y, bounds.getCenter().z);
         Vector3d size = new Vector3d(bounds.getRange().x, bounds.getRange().y, bounds.getRange().z);
-        
+
         // representation variant 2
         BoundingBox3d.Corners corners = bounds.getCorners();
         Point3f xyzmin = new Point3f(corners.getXminYminZmin().toArray());
-        Point3f xyminzmax = new Point3f(corners.getXminYminZmax().toArray()); 
+        Point3f xyminzmax = new Point3f(corners.getXminYminZmax().toArray());
         Point3f xminymaxzmin = new Point3f(corners.getXminYmaxZmin().toArray());
         Point3f xminymaxzmax = new Point3f(corners.getXminYmaxZmax().toArray());
         Point3f xmaxyzmin = new Point3f(corners.getXmaxYminZmin().toArray());
@@ -716,27 +669,27 @@ public class EuclidViewer3D extends AbstractAnalysis implements iEuclidViewer3D{
     
     /**
      * Adds a robot to the chart from COLLADA (.dae) files.
-     * 
+     *
      * @param paths The paths to the Collada files for the robot as a List
      */
-    public void addRobot(List<String> paths){
+    public void addRobot(List<String> paths) {
         EuclidRobot robot = new EuclidRobot(chart, RobotType.notype);
         robot.setDataDAEComponents(paths);
         robotList.add(robot);
         robot.addToChartParts();
     }
-    
+
     /**
      * Add a UR5e Robot.
-     * 
-     * @param paths the paths to the robot parts
+     *
+     * @param paths           the paths to the robot parts
      * @param delta_theta_rad the angle of the single parts
      */
-    void addRobotUR5e(List<String> paths, double[] delta_theta_rad){ 
+    void addRobotUR5e(List<String> paths, double[] delta_theta_rad) {
         double[] delta_a_m = new double[]{0d, 0.000156734465764371306, 0.109039760794650886, 0.00135049423466820917, 0.30167176077633267e-05, 8.98147062591837358e-05, 0};
         double[] delta_d_m = new double[]{0d, -7.63582045015809285e-05, 136.026368377065324, -130.146527922606964, 0.12049886607637639, -0.13561334270734671, -0.000218168195914358876};
-        double[] delta_alpha_rad= new double[]{0d, -0.000849612070594307767, 0.00209120614311242205, 0.0044565542371754396, -0.000376815598678081898, 0.000480742313784698894, 0};
-        
+        double[] delta_alpha_rad = new double[]{0d, -0.000849612070594307767, 0.00209120614311242205, 0.0044565542371754396, -0.000376815598678081898, 0.000480742313784698894, 0};
+
         EuclidRobot robot = new EuclidRobot(chart, RobotType.UR5e);
         robot.setDataWithUR5eDHDeltas(paths, delta_theta_rad, delta_alpha_rad, delta_d_m, delta_a_m);
         robotList.add(robot);
@@ -776,8 +729,7 @@ public class EuclidViewer3D extends AbstractAnalysis implements iEuclidViewer3D{
 
     @Override
     public void init() throws Exception {
-        
-        Quality q = Quality.Advanced(); 
+        Quality q = Quality.Nicest();
         q.setDepthActivated(true);
         //q.setAlphaActivated(false);
         q.setAnimated(false); 
@@ -835,9 +787,9 @@ public class EuclidViewer3D extends AbstractAnalysis implements iEuclidViewer3D{
         double[] delta_d_m = new double[]{0d, 162.5, 0, 0, 133.3, 997, 996};
         double[] delta_alpha_rad= new double[]{0d, Math.PI/2, 0, 0, Math.PI/2, Math.PI/2, 0};
         */
-        
-        
-        double[] delta_theta_rad = new double[]{0d,0d,0d,0d,0d,0d,0d};      
+
+
+        double[] delta_theta_rad = new double[]{0d, 0d, 0d, 0d, 0d, 0d, 0d};
 
         /*ArrayList<String> pathList = new ArrayList<>();
         pathList.add("/data/objfiles/base.dae");

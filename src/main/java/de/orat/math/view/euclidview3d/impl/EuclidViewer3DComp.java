@@ -53,6 +53,7 @@ import org.jzy3d.plot3d.rendering.canvas.CanvasNewtAwt;
 import org.jzy3d.plot3d.rendering.canvas.Quality;
 import org.jzy3d.plot3d.rendering.lights.Light;
 import org.jzy3d.plot3d.rendering.view.Camera;
+import org.jzy3d.plot3d.transform.Transform;
 
 /**
  * @author Oliver Rettig (Oliver.Rettig@orat.de)
@@ -634,45 +635,45 @@ public final class EuclidViewer3DComp  implements iEuclidViewer3D{
         //TODO
         return true;
     }*/
-    
-    
+
+
     @Override
-    public long addPolygone(Point3d location, Point3d[] corners, Color color, 
-            String label, boolean showNormal, boolean transparency) {
-        
-        org.jzy3d.colors.Color col = new org.jzy3d.colors.Color(color.getRed(),color.getGreen(),color.getBlue(), color.getAlpha());
-        Composite composite = addPolygone(location, corners, 
-                          col, label);
+    public long addPolygone(Point3d location, Point3d[] corners, Color color,
+                            String label, boolean showNormal, boolean transparency, Transform transform) {
+        org.jzy3d.colors.Color col = new org.jzy3d.colors.Color(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha());
+        Composite composite = addPolygone(location, corners,
+                col, label, transform);
         viewObjects.put(compositeId, composite);
         return compositeId++;
     }
 
     /**
      * Add a plane to the 3d view.
-     * 
+     *
      * @param location center of the plane (first point) [mm]
      * @param corners
-     * @param color color of the plane
-     * @param label the text of the label of the plane
+     * @param color    color of the plane
+     * @param label    the text of the label of the plane
      */
-    Composite addPolygone(Point3d location, Point3d[] corners, 
-                          org.jzy3d.colors.Color color, String label){
-        
+    Composite addPolygone(Point3d location, Point3d[] corners,
+                          org.jzy3d.colors.Color color, String label, Transform transform) {
+
         //TODO test corners auf illagal values
-        if (!isValid(location)){
+        if (!isValid(location)) {
             throw new IllegalArgumentException("addPlane(): location with illegal values!");
         }
-        
+
         EuclidPlane plane = new EuclidPlane();
         plane.setData(location, corners, color, label);
         plane.setPolygonOffsetFillEnable(false);
         plane.setWireframeDisplayed(true);
-        if (pickingSupport != null){
+        plane.setTransformBefore(transform);
+        if (pickingSupport != null) {
             plane.setPickingId(pickingId++);
             pickingSupport.registerDrawableObject(plane, plane);
         }
         chart.add(plane);
-        if (pickingSupport != null){    
+        if (pickingSupport != null) {
             pickingSupportList.add(plane);
         }
         return plane;
